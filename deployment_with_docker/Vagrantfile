@@ -1,0 +1,147 @@
+Vagrant.require_version ">= 1.4.3"
+VAGRANTFILE_API_VERSION = "2"
+
+BOX='centos/7'
+
+ceph_node4= 'ceph-node4'
+ceph_node4_disk2 = './ceph-node4/ceph-node4_disk2.vdi'
+ceph_node4_disk3 = './ceph-node4/ceph-node4_disk3.vdi'
+ceph_node4_disk4 = './ceph-node4/ceph-node4_disk4.vdi'
+
+ceph_node5= 'ceph-node5'
+ceph_node5_disk2 = './ceph-node5/ceph-node5_disk2.vdi'
+ceph_node5_disk3 = './ceph-node5/ceph-node5_disk3.vdi'
+ceph_node5_disk4 = './ceph-node5/ceph-node5_disk4.vdi'
+
+ceph_node6= 'ceph-node6'
+ceph_node6_disk2 = './ceph-node6/ceph-node6_disk2.vdi'
+ceph_node6_disk3 = './ceph-node6/ceph-node6_disk3.vdi'
+ceph_node6_disk4 = './ceph-node6/ceph-node6_disk4.vdi'
+
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+##################################### Configuration for ceph-node5 #####################################################
+
+ 		config.vm.define :"ceph-node5" do |node5|
+                        node5.vm.box = BOX
+                        
+                        node5.vm.network :private_network, ip: "192.168.1.105"
+						node5.vm.network :public_network, ip: "192.168.56.105"
+                        node5.vm.hostname = ceph_node5
+                        node5.vm.synced_folder ".", "/vagrant", disabled: false
+			            node5.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+                        node5.vm.provision "shell", path: "post-deploy.sh",run: "once"   #run once or always
+                        node5.vm.provider "virtualbox" do |v|
+
+                                v.customize ["modifyvm", :id, "--memory", "1024"]
+								v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+                                v.name = ceph_node5
+				                v.gui = false		
+								
+
+                                unless File.exist?(ceph_node5_disk2)
+								# Adding a SATA controller that allows 4 hard drives
+	                            v.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4] 
+                                v.customize ['createhd', '--filename', ceph_node5_disk2,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', ceph_node5_disk2]
+                                end
+
+                                unless File.exist?(ceph_node5_disk3)
+                                v.customize ['createhd', '--filename', ceph_node5_disk3,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', ceph_node5_disk3]
+                                end
+
+                                unless File.exist?(ceph_node5_disk4)
+                                v.customize ['createhd', '--filename', ceph_node5_disk4,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', ceph_node5_disk4]
+                                end
+
+                        end
+
+                end
+
+##################################### Configuration for ceph-node6 #####################################################
+
+                config.vm.define :"ceph-node6" do |node6|
+                        node6.vm.box = BOX
+                        
+                        node6.vm.network :private_network, ip: "192.168.1.106"
+						node6.vm.network :public_network, ip: "192.168.56.106"
+                        node6.vm.hostname = ceph_node6
+                        node6.vm.synced_folder ".", "/vagrant", disabled: false
+			            node6.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+                        node6.vm.provision "shell", path: "post-deploy.sh",run: "once"
+                        node6.vm.provider "virtualbox" do |v|
+
+                                v.customize ["modifyvm", :id, "--memory", "1024"]
+								v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+                                v.name = ceph_node6
+                                v.gui = false
+								
+							
+                                unless File.exist?(ceph_node6_disk2)
+								# Adding a SATA controller that allows 4 hard drives
+	                            v.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4] 
+                                v.customize ['createhd', '--filename', ceph_node6_disk2,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', ceph_node6_disk2]
+                                end
+
+                                unless File.exist?(ceph_node6_disk3)
+                                v.customize ['createhd', '--filename', ceph_node6_disk3,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', ceph_node6_disk3]
+                                end
+
+                                unless File.exist?(ceph_node6_disk4)
+                                v.customize ['createhd', '--filename', ceph_node6_disk4,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', ceph_node6_disk4]
+                                end
+
+                        end
+
+                end
+
+	  
+##################################### Configuration for ceph-node4, ceph-node4, as the ansible master node, runs as the last one ######
+
+                 config.vm.define :"ceph-node4" do |node4|
+                        node4.vm.box = BOX
+                        
+                        node4.vm.network :private_network, ip: "192.168.1.104"
+						node4.vm.network :public_network, ip: "192.168.56.104"
+                        node4.vm.hostname = ceph_node4
+                        node4.vm.synced_folder ".", "/vagrant", create: true, owner: "root", group: "root", mount_options: ["dmode=755","fmode=644"], type: "rsync"
+			            node4.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+                        node4.vm.provision "shell", path: "post-deploy.sh" ,run: "once"
+						node4.vm.provision "shell", path: "ceph_ansible.sh" ,run: "once"
+                        node4.vm.provider "virtualbox" do |v|
+
+                                v.customize ["modifyvm", :id, "--memory", "1024"]
+								v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+                                v.name = ceph_node4
+				                v.gui = false
+								
+								unless File.exist?(ceph_node4_disk2)
+								# Adding a SATA controller that allows 4 hard drives
+	                            v.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4] 
+                                v.customize ['createhd', '--filename', ceph_node4_disk2, '--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', ceph_node4_disk2]
+                                end
+
+                                unless File.exist?(ceph_node4_disk3)
+                                v.customize ['createhd', '--filename', ceph_node4_disk3,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', ceph_node4_disk3]
+                                end
+
+                                unless File.exist?(ceph_node4_disk4)
+                                v.customize ['createhd', '--filename', ceph_node4_disk4,'--size', 1 * 20480]
+                                v.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', ceph_node4_disk4]
+                                end
+
+                        end
+
+                end
+
+				 
+###############################################################################################################
+end
