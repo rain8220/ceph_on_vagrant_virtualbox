@@ -97,6 +97,7 @@ ceph_docker_image: "ceph/daemon"
 ceph_docker_image_tag: latest-mimic-devel
 ceph_docker_registry: docker.io
 containerized_deployment: true
+configure_firewall: False
 " >>all.yml
 
 cp osds.yml.sample osds.yml
@@ -112,4 +113,4 @@ cp clients.yml.sample clients.yml
 cp mons.yml.sample mons.yml
 
 cd ~/ceph-ansible
-ansible-playbook site-docker.yml                                                                                     
+# ansible-playbook site-docker.yml                                                                                     
